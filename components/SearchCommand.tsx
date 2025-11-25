@@ -4,9 +4,7 @@ import { useEffect, useState } from "react";
 import {
   CommandDialog,
   CommandEmpty,
-  CommandGroup,
   CommandInput,
-  CommandItem,
   CommandList,
 } from "@/components/ui/command";
 import { Button } from "./ui/button";
@@ -120,10 +118,7 @@ export default function SearchCommand({
                         {stocks.symbol} | {stocks.exchange} | {stocks.type}
                       </div>
                     </div>
-                    {/* <Star/> */}
                   </Link>
-
-                  
                 </li>
               ))}
             </ul>

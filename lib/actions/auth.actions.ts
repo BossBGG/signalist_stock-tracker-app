@@ -2,8 +2,6 @@
 
 import { auth } from "@/lib/better-auth/auth";
 import { inngest } from "@/lib/inngest/client";
-import { date, success } from "better-auth";
-import { error } from "console";
 import { headers } from "next/headers";
 
 export const signUpWithEmail = async ({
