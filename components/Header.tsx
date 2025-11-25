@@ -1,7 +1,5 @@
 import Link from 'next/link'
-import React from 'react'
 import Image from 'next/image'
-
 import UserDropdown from './UserDropdown'
 import { searchStocks } from '@/lib/actions/finnhub.actions'
 import NavItems from './NavItems'

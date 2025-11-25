@@ -1,4 +1,3 @@
-import { email, string } from "better-auth"
 import nodemailer from "nodemailer"
 import { WELCOME_EMAIL_TEMPLATE } from "./templates"
 import { NEWS_SUMMARY_EMAIL_PROMPT } from "../inngest/prompts"

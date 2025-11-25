@@ -12,7 +12,6 @@ import {
   RISK_TOLERANCE_OPTIONS,
 } from "@/lib/constants";
 import { useRouter } from "next/navigation";
-import React from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
