@@ -35,10 +35,13 @@ const SignUp = () => {
     mode: "onBlur",
   });
 
-  const onSubmit = async (data: SignUpFormData) => {
+  const onSubmit: SubmitHandler<SignUpFormData> = async (data) => {
     try {
       const result = await signUpWithEmail(data);
-      if (result.success) router.push("/");
+      if (result.success) {
+        toast.success("Account created successfully!");
+        router.push("/");
+      }
     } catch (e) {
       console.error(e);
       toast.error("Sign up failed", {
