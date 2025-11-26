@@ -13,27 +13,34 @@ export const signUpWithEmail = async ({
   riskTolerance,
   preferredIndustry,
 }: SignUpFormData) => {
-  const response = await auth.api.signUpEmail({
-    body: { email, password, name: fullName },
-  });
+  try {
+    const response = await auth.api.signUpEmail({
+      body: { email, password, name: fullName },
+    });
 
-  if (!response) {
-    throw new Error("Failed to create account");
+    if (!response) {
+      return { success: false, error: "Failed to create account" };
+    }
+
+    await inngest.send({
+      name: "app/user.created",
+      data: {
+        email,
+        name: fullName,
+        country,
+        investmentGoals,
+        riskTolerance,
+        preferredIndustry,
+      },
+    });
+
+    return { success: true };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Failed to create account",
+    };
   }
-
-  await inngest.send({
-    name: "app/user.created",
-    data: {
-      email,
-      name: fullName,
-      country,
-      investmentGoals,
-      riskTolerance,
-      preferredIndustry,
-    },
-  });
-
-  return { success: true, data: response };
 };
 
 export const signInWithEmail = async ({ email, password }: SignInFormData) => {
