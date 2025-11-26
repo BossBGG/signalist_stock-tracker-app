@@ -59,7 +59,7 @@ const SignUp = () => {
           placeholder="John Doe"
           register={register}
           error={errors.fullName}
-          validation={{ require: "Full name is required", minLength: 2 }}
+          validation={{ required: "Full name is required", minLength: 2 }}
         />
 
         <InputField
@@ -69,7 +69,7 @@ const SignUp = () => {
           register={register}
           error={errors.email}
           validation={{
-            require: "Email is required",
+            required: "Email is required",
             pattern: /^\w+@\w+\.\w+$/,
             message: "Email address is required",
           }}
@@ -82,7 +82,7 @@ const SignUp = () => {
           type="password"
           register={register}
           error={errors.password}
-          validation={{ require: "Password is required", minLength: 8 }}
+          validation={{ required: "Password is required", minLength: 8 }}
         />
 
         <CountrySelectField
