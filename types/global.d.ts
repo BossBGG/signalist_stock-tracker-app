@@ -119,6 +119,7 @@ declare global {
     type ProfileData = {
         name?: string;
         marketCapitalization?: number;
+        logo?: string;
     };
 
     type FinancialsData = {
@@ -146,6 +147,7 @@ declare global {
         changeFormatted?: string;
         marketCap?: string;
         peRatio?: string;
+        logo?: string;
     };
 
     type AlertsListProps = {
@@ -217,9 +219,11 @@ declare global {
         company: string;
         alertName: string;
         currentPrice: number;
-        alertType: 'upper' | 'lower';
+        alertType: 'price' | 'volume';
+        condition: 'greater' | 'less';
         threshold: number;
         changePercent?: number;
+        frequency?: string;
     };
 }
 

@@ -126,7 +126,7 @@ export const formatDateToday = new Date().toLocaleDateString('en-US', {
 
 
 export const getAlertText = (alert: Alert) => {
-  const condition = alert.alertType === 'upper' ? '>' : '<';
+  const condition = alert.alertType === 'price' ? '>' : '<';
   return `Price ${condition} ${formatPrice(alert.threshold)}`;
 };
 
@@ -137,3 +137,8 @@ export const getFormattedTodayDate = () => new Date().toLocaleDateString('en-US'
   day: 'numeric',
   timeZone: 'UTC',
 });
+
+export const calculateProximity = (currentValue: number, targetValue: number) => {
+  if(!currentValue || !targetValue) return 0;
+  return ((currentValue - targetValue) / targetValue) * 100;
+}
