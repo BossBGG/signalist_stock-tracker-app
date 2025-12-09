@@ -82,7 +82,10 @@ const AlertsList = ({ alertData, watchlist, onEditAlert, onDeleteAlert }: Alerts
                         <Pencil className="w-3 h-3" />
                       </button>
                       <button
-                        onClick={() => onDeleteAlert(alert.id)}
+                        onClick={() => {
+                          console.log("[ALERT LIST] Delete button clicked for alert:", alert.id, alert);
+                          onDeleteAlert(alert.id);
+                        }}
                         className="text-gray-500 hover:text-red-500 transition-colors p-0.5"
                         title="Delete Alert"
                       >

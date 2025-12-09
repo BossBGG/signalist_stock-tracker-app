@@ -8,7 +8,7 @@ export interface AlertItem extends Document {
     alertType: 'price' | 'volume';
     condition: 'greater' | 'less' | 'moves_up_by' | 'moves_down_by';
     threshold: number;
-    frequency: 'once' | 'once_per_minute' | 'once_per_hour' | 'once_per_day';
+    frequency: 'once_per_minute' | 'once_per_5_minute' | 'once_per_15_minute' | 'once_per_hour' | 'once_per_day';
     active: boolean;
     lastTriggeredAt?: Date;
     createdAt: Date;
@@ -24,7 +24,7 @@ const AlertSchema = new Schema<AlertItem>(
         alertType: { type: String, enum: ['price', 'volume'] , default: 'price'},
         condition: { type: String, enum: ['greater', 'less', 'moves_up_by' ,'moves_down_by'], required: true},
         threshold: { type: Number, required: true},
-        frequency: { type: String, enum: ['once', 'once_per_minute' , 'once_per_hour' , 'once_per_day'], default: 'once'},
+        frequency: { type: String, enum: ['once_per_minute', 'once_per_5_minute', 'once_per_15_minute' , 'once_per_hour' , 'once_per_day'], default: 'once_per_minute'},
         active: { type: Boolean, default: true},
         lastTriggeredAt: { type: Date },
     },

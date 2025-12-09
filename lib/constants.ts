@@ -36,6 +36,14 @@ export const CONDITION_OPTIONS = [
     { value: 'less', label: 'Less than (<)' },
 ];
 
+export const FREQUENCY_OPTIONS = [
+    { value: 'once_per_minute', label: 'Once per minutes' },
+    { value: 'once_per_5_minute', label: 'Once per 5 minutes' },
+    { value: 'once_per_15_minute', label: 'Once per 15 minutes' },
+    { value: 'once_per_hour', label: 'Once per hour' },
+    { value: 'once_per_day', label: 'Once per day' },
+];
+
 // TradingView Charts
 export const MARKET_OVERVIEW_WIDGET_CONFIG = {
     colorTheme: 'dark', // dark mode

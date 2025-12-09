@@ -10,7 +10,7 @@ import {
 import { Button } from "./ui/button";
 import { Loader2, Star, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { searchStocks } from "@/lib/actions/finnhub.actions";
+import { searchStocksForClient } from "@/lib/actions/finnhub.actions";
 import { useDebounce } from "@/hook/useDebounce";
 import WatchlistButton from "./ui/WatchlistButton";
 import { symbol } from "zod";
@@ -45,7 +45,7 @@ export default function SearchCommand({
 
     setLoading(true);
     try {
-      const results = await searchStocks(searchTerm.trim());
+      const results = await searchStocksForClient(searchTerm.trim());
       setStocks(results);
     } catch {
       setStocks([]);
@@ -62,9 +62,10 @@ export default function SearchCommand({
 
   const handleWatchlistChange = (symbol: string, isAdded: boolean) => {
     setStocks((prev) => 
-    prev.map((s) => 
-      s.symbol === symbol ? { ...s, isInWatchlist: isAdded} : s
-    ));
+      prev.map((s) => 
+        s.symbol === symbol ? { ...s, isInWatchlist: isAdded } : s
+      )
+    );
   };
 
   const handleSelectStock = () => {

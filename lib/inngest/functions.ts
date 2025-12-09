@@ -3,11 +3,14 @@ import {
   NEWS_SUMMARY_EMAIL_PROMPT,
   PERSONALIZED_WELCOME_EMAIL_PROMPT,
 } from "./prompts";
-import { sendNewsSummaryEmail, sendWelcomeEmail } from "../nodemailer";
+import { sendNewsSummaryEmail, sendStockAlertEmail, sendWelcomeEmail } from "../nodemailer";
 import { getAllUsersForNewsEmail } from "../actions/user.actions";
 import { getWatchlistSymbolsByEmail } from "../actions/watchlist.actions";
-import { getNews } from "../actions/finnhub.actions";
+import { fetchJSON, getNews } from "../actions/finnhub.actions";
 import { getFormattedTodayDate } from "../utils";
+import { connectToDatabase } from "@/database/mongoose";
+import { AlertModel } from "@/database/models/alert.model";
+
 
 export const sendSignUpEmail = inngest.createFunction(
   { id: "sign-up-email" },
@@ -146,5 +149,101 @@ export const sendDailyNewsSummary = inngest.createFunction(
     });
 
     return { success: true , message: "Daily news summary email sent successfully"}
+  }
+);
+
+export const checkAndTriggerAlerts = inngest.createFunction(
+  { id: "check-stock-alerts"},
+  { cron: "*/10 * * * *"},
+  async ({ step }) => {
+    await connectToDatabase();
+    //
+    const alerts = await step.run("fetch-active-alerts", async () => {
+      return await AlertModel.find({ active: true }).lean();
+    });
+
+    if(!alerts.length) return {message: "No active alerts"};
+    //
+    const uniqueSymbols = [...new Set(alerts.map((a: any) => a.symbol))];
+    const token = process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
+    //
+    const marketData = await step.run("fetch-market-data", async () => {
+      const data: Record<string , any> = {};
+      await Promise.all(
+        uniqueSymbols.map(async (symbol) => {
+          try {
+            const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${token}`;
+            const quote = await fetchJSON<QuoteData>(url);
+            data[symbol as string] = quote;
+          } catch (e) {
+            console.error(`Failed to fetch quote for ${symbol}`, e);
+          }
+        })
+      );
+      return data;
+    });
+
+    const triggeredAlerts = await step.run("process-alerts", async () => {
+      const triggered: any[] = [];
+      const db = (await connectToDatabase()).connection.db;
+      if(!db) return [];
+      const now = new Date();
+
+      for (const alert of alerts as any[]){
+        const quote = marketData[alert.symbol];
+        if(!quote) continue;
+
+        if(alert.lastTriggeredAt) {
+          const lastTriggered = new Date(alert.lastTriggeredAt);
+          const minutesSince = (now.getTime() - lastTriggered.getTime()) / 60000;
+          
+          if(alert.frequency === 'once_per_minute' && minutesSince < 1) continue;
+          if(alert.frequency === 'once_per_5_minute' && minutesSince < 5) continue;
+          if(alert.frequency === 'once_per_15_minute' && minutesSince < 15) continue;
+          if(alert.frequency === 'once_per_hour' && minutesSince < 60) continue;
+          if(alert.frequency === 'once_per_day' && minutesSince < 1440) continue;
+        }
+
+        const currentPrice = quote.c;
+        const threshold = alert.threshold;
+        let isTriggered = false;
+        let emailType: 'upper' | 'lower' | 'volume' = 'upper';
+
+        if (alert.alertType === 'price') {
+          if(alert.condition === "greater" && currentPrice >= threshold) {
+            isTriggered = true;
+            emailType = 'upper';
+          } else if (alert.condition === 'less' && currentPrice <= threshold) {
+            isTriggered = true;
+            emailType = 'lower';
+          }
+        }
+
+        if(isTriggered) {
+          const user = await db.collection("user").findOne({ id: alert.userId });
+
+          if(user?.email) {
+            await sendStockAlertEmail({
+              email: user.email,
+              type: emailType,
+              alertData: {
+                symbol: alert.symbol,
+                company: alert.company,
+                currentPrice: currentPrice,
+                threshold: threshold,
+                currentVolume: (quote.v / 1000000).toFixed(2) + 'M',
+                changePercent: quote.dp
+              }
+            });
+
+            triggered.push(alert._id);
+            await AlertModel.findByIdAndUpdate(alert._id, { lastTriggeredAt: now });
+          }
+        }
+      }
+      return triggered;
+    });
+
+    return { success: true, triggeredCount: triggeredAlerts.length };
   }
 );

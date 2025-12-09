@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import AlertsList from '@/components/AlertList';
 import { symbol } from 'zod';
+import { toast } from 'sonner';
+import { deleteAlert } from '@/lib/actions/alert.actions';
+import { useRouter } from 'next/navigation';
 
 interface Props {
     watchlist: any[];
@@ -17,6 +20,7 @@ interface Props {
 }
 
 const WatchlistClient = ({ watchlist , alerts , news , initalStocks }: Props) => {
+    const router = useRouter();
     const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
     const [selectedStockForAlert, setSelectedStockForAlert] = useState<{symbol: string, company: string} | undefined>(undefined);
 
@@ -24,14 +28,26 @@ const WatchlistClient = ({ watchlist , alerts , news , initalStocks }: Props) =>
 
     const handleEditAlert = (alert: Alert) => {
         setEditingAlert(alert);
+        setSelectedStockForAlert(undefined);
         setIsAlertModalOpen(true);
     };
 
     const handleDeleteAlert = async (alertId: string) => {
-        console.log("Delete", alertId);
+        try {
+            const result = await deleteAlert(alertId);
+            if(result.success) {
+                toast.success("Alert deleted successfully");
+                router.refresh();
+            } else {
+                toast.error("Failed to delete alert");
+            }
+        } catch (error) {
+            toast.error("An error occurred")
+        }
     }
 
     const handleOpenAlertModal = (symbol?: string, company?: string) => {
+        setEditingAlert(undefined);
         if(symbol && company) {
             setSelectedStockForAlert({ symbol, company });
         } else {
@@ -95,8 +111,8 @@ const WatchlistClient = ({ watchlist , alerts , news , initalStocks }: Props) =>
                 <h2 className="watchlist-title">News</h2>
             </div>
             <div className="watchlist-news">
-                {news.map((item) => (
-                    <Link href={item.url} target='_blank' key={item.id} className="news-item group"> 
+                {news.map((item, index) => (
+                    <Link href={item.url} target='_blank' key={`${item.id}-${index}`} className="news-item group"> 
                         <div className='news-tag'>
                             {item.related}
                         </div>

@@ -19,6 +19,9 @@ async function fetchJSON<T>(
   const res = await fetch(url, options);
   if (!res.ok) {
     const text = await res.text().catch(() => "");
+    if (res.status === 429) {
+      console.warn(`API limit reached: ${text}`);
+    }
     throw new Error(`Fetch failed ${res.status}: ${text}`);
   }
   return (await res.json()) as T;
@@ -107,7 +110,7 @@ export async function getNews(
   }
 }
 
-export const searchStocks = cache(async (query?: string): Promise<StockWithWatchlistStatus[]> => {
+async function searchStocksWithEmail(query?: string, userEmail?: string): Promise<StockWithWatchlistStatus[]> {
   try {
     const token = process.env.FINNHUB_API_KEY ?? NEXT_PUBLIC_FINNHUB_API_KEY;
     if(!token) {
@@ -162,6 +165,12 @@ export const searchStocks = cache(async (query?: string): Promise<StockWithWatch
       results = Array.isArray(data?.result) ? data.result : [];
     }
 
+    let watchlistSymbols: string[] = [];
+    if (userEmail) {
+      const { getWatchlistSymbolsByEmail } = await import('./watchlist.actions');
+      watchlistSymbols = await getWatchlistSymbolsByEmail(userEmail);
+    }
+
     const mapped: StockWithWatchlistStatus[] = results
       .map((r) => {
         const upper = (r.symbol || '').toUpperCase();
@@ -175,7 +184,7 @@ export const searchStocks = cache(async (query?: string): Promise<StockWithWatch
           name,
           exchange,
           type,
-          isInWatchlist: false,
+          isInWatchlist: watchlistSymbols.includes(upper),
         };
         return item;
       })
@@ -186,4 +195,19 @@ export const searchStocks = cache(async (query?: string): Promise<StockWithWatch
     console.error('Error in stock search:', err);
     return [];
   }
-})
+}
+
+export const searchStocks = cache(searchStocksWithEmail);
+
+export async function searchStocksForClient(query?: string): Promise<StockWithWatchlistStatus[]> {
+  try {
+    const { auth } = await import('@/lib/better-auth/auth');
+    const { headers } = await import('next/headers');
+    const session = await auth.api.getSession({ headers: await headers() });
+    const userEmail = session?.user?.email;
+    return searchStocksWithEmail(query, userEmail);
+  } catch (err) {
+    console.error('Error in searchStocksForClient:', err);
+    return searchStocksWithEmail(query);
+  }
+}

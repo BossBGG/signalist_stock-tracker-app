@@ -6,8 +6,8 @@ import { useForm } from "react-hook-form";
 import InputField from "./form/InputField";
 import SelectField from "./form/SelectField";
 import { Button } from "./ui/button";
-import { ALERT_TYPE_OPTIONS, CONDITION_OPTIONS } from "@/lib/constants";
-import { createAlert } from "@/lib/actions/alert.actions"; 
+import { ALERT_TYPE_OPTIONS, CONDITION_OPTIONS, FREQUENCY_OPTIONS } from "@/lib/constants";
+import { createAlert, updateAlert } from "@/lib/actions/alert.actions"; 
 import { toast } from "sonner";
 
 interface CreateAlertModalProps {
@@ -28,7 +28,7 @@ const CreateAlertModal = ({ open, setOpen, defaultSymbol, defaultCompany, watchl
       alertType: "price",
       condition: "greater",
       threshold: "",
-      frequency: "once"
+      frequency: "once_per_minute"
     }
   });
 
@@ -40,7 +40,7 @@ const CreateAlertModal = ({ open, setOpen, defaultSymbol, defaultCompany, watchl
         setValue("alertType", editData.alertType);
         setValue("condition", editData.condition);
         setValue("threshold", editData.threshold.toString());
-        setValue("frequency", editData.frequency || "");
+        setValue("frequency", editData.frequency || " ");
     }
     else if (defaultSymbol && defaultCompany) {
       setValue("symbol", defaultSymbol);
@@ -51,19 +51,28 @@ const CreateAlertModal = ({ open, setOpen, defaultSymbol, defaultCompany, watchl
 
 
   const onSubmit = async (data: any) => {
+    console.log("[MODAL] Submit data:", data);
+    console.log("[MODAL] Edit mode:", !!editData, "ID:", editData?.id);
+    
     const selectedStock = watchlist.find(s => s.symbol === data.symbol);
     const payload = {
         ...data,
         company: data.company || selectedStock?.company || data.symbol
     };
 
-    const result = await createAlert(payload);
+    const result = editData 
+      ? await updateAlert(editData.id, payload)
+      : await createAlert(payload);
+      
+    console.log("[MODAL] Result:", result);
+      
     if (result.success) {
-      toast.success("Alert created successfully");
+      toast.success(editData ? "Alert updated successfully" : "Alert created successfully");
       setOpen(false);
       reset();
+      window.location.reload();
     } else {
-      toast.error("Failed to create alert");
+      toast.error(editData ? "Failed to update alert" : "Failed to create alert");
     }
   };
 
@@ -73,7 +82,7 @@ const CreateAlertModal = ({ open, setOpen, defaultSymbol, defaultCompany, watchl
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="alert-dialog">
         <DialogHeader>
-          <DialogTitle className="alert-title">Price Alert</DialogTitle>
+          <DialogTitle className="alert-title">{editData ? "Edit" : "Create"} Price Alert</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -127,15 +136,24 @@ const CreateAlertModal = ({ open, setOpen, defaultSymbol, defaultCompany, watchl
           <InputField 
             name="threshold" 
             label="Threshold Value" 
-            placeholder="$ 140" 
+            placeholder="" 
             type="number"
             register={register} 
             error={errors.threshold}
             validation={{ required: "Required" }}
           />
 
+          <SelectField 
+            name="frequency"
+            label="Check Frequency"
+            placeholder="Select frequency"
+            options={FREQUENCY_OPTIONS}
+            control={control}
+            error={errors.frequency}
+          />
+
           <Button type="submit" disabled={isSubmitting} className="yellow-btn w-full mt-2">
-            {isSubmitting ? "Creating..." : "Create Alert"}
+            {isSubmitting ? (editData ? "Updating..." : "Creating...") : (editData ? "Update Alert" : "Create Alert")}
           </Button>
         </form>
       </DialogContent>

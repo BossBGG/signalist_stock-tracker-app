@@ -5,7 +5,7 @@ import { searchStocks } from '@/lib/actions/finnhub.actions'
 import NavItems from './NavItems'
 
 const Header = async ({ user }: { user: User } ) => {
-  const initialStocks = await searchStocks();
+  const initialStocks = await searchStocks(undefined, user?.email);
   return (
     <header className='stick top-0 header'>
       <div className='container header-wrapper'>
