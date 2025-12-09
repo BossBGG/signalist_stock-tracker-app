@@ -154,19 +154,38 @@ export const sendDailyNewsSummary = inngest.createFunction(
 
 export const checkAndTriggerAlerts = inngest.createFunction(
   { id: "check-stock-alerts"},
-  { cron: "*/10 * * * *"},
+  { cron: "* * * * *"},
   async ({ step }) => {
     await connectToDatabase();
-    //
-    const alerts = await step.run("fetch-active-alerts", async () => {
-      return await AlertModel.find({ active: true }).lean();
+
+    const now = new Date();
+
+    // get all alerts
+    const alertsToCheck = await step.run("fetch-due-alerts", async () => {
+      const oneMinAgo = new Date(now.getTime() - 60 * 1000);
+      const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000);
+      const fifteenMinAgo = new Date(now.getTime() -  15 * 60 * 1000);
+      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+      return await AlertModel.find({
+        active: true,
+        $or: [
+          { lastTriggeredAt: null},
+          { frequency: 'once_per_minute', lastTriggeredAt: { $lte: oneMinAgo}},
+          { frequency: 'once_per_5_minute', lastTriggeredAt: { $lte: fiveMinAgo}},
+          { frequency: 'once_per_15_minute', lastTriggeredAt: { $lte: fifteenMinAgo}},
+          { frequency: 'once_per_hour', lastTriggeredAt: { $lte: oneHourAgo}},
+          { frequency: 'once_per_day', lastTriggeredAt: { $lte: oneDayAgo}},
+        ]
+      }).lean()
     });
 
-    if(!alerts.length) return {message: "No active alerts"};
-    //
-    const uniqueSymbols = [...new Set(alerts.map((a: any) => a.symbol))];
+    if(!alertsToCheck.length) return {message: "No alerts due for checking"};
+    //Batching
+    const uniqueSymbols = [...new Set(alertsToCheck.map((a: any) => a.symbol))];
     const token = process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
-    //
+    // get market data
     const marketData = await step.run("fetch-market-data", async () => {
       const data: Record<string , any> = {};
       await Promise.all(
@@ -183,32 +202,25 @@ export const checkAndTriggerAlerts = inngest.createFunction(
       return data;
     });
 
+    //Process Alerts
     const triggeredAlerts = await step.run("process-alerts", async () => {
       const triggered: any[] = [];
       const db = (await connectToDatabase()).connection.db;
       if(!db) return [];
-      const now = new Date();
 
-      for (const alert of alerts as any[]){
+      for (const alert of alertsToCheck as any[]){
         const quote = marketData[alert.symbol];
         if(!quote) continue;
 
-        if(alert.lastTriggeredAt) {
-          const lastTriggered = new Date(alert.lastTriggeredAt);
-          const minutesSince = (now.getTime() - lastTriggered.getTime()) / 60000;
-          
-          if(alert.frequency === 'once_per_minute' && minutesSince < 1) continue;
-          if(alert.frequency === 'once_per_5_minute' && minutesSince < 5) continue;
-          if(alert.frequency === 'once_per_15_minute' && minutesSince < 15) continue;
-          if(alert.frequency === 'once_per_hour' && minutesSince < 60) continue;
-          if(alert.frequency === 'once_per_day' && minutesSince < 1440) continue;
-        }
-
         const currentPrice = quote.c;
+        const currentVolume = quote.v;
+
         const threshold = alert.threshold;
         let isTriggered = false;
         let emailType: 'upper' | 'lower' | 'volume' = 'upper';
+        let changePercent = quote.dp;
 
+        // check if price condition is met
         if (alert.alertType === 'price') {
           if(alert.condition === "greater" && currentPrice >= threshold) {
             isTriggered = true;
@@ -217,6 +229,14 @@ export const checkAndTriggerAlerts = inngest.createFunction(
             isTriggered = true;
             emailType = 'lower';
           }
+          // เพิ่ม Logic Moves Up/Down By (Optional ถ้าต้องการ)
+        }
+        else if (alert.alertType === 'volume') {
+          if(alert.condition === "greater" && currentVolume >= threshold) {
+            isTriggered = true;
+            emailType = 'volume';
+          }
+          // Volume ปกติจะไม่ใช้ 'less' เพราะเริ่มต้นวันมันเป็น 0 เสมอ
         }
 
         if(isTriggered) {
@@ -244,6 +264,6 @@ export const checkAndTriggerAlerts = inngest.createFunction(
       return triggered;
     });
 
-    return { success: true, triggeredCount: triggeredAlerts.length };
+    return { success: true, checkedCount: alertsToCheck.length , triggeredCount: triggeredAlerts.length };
   }
 );

@@ -30,6 +30,23 @@ export default function SearchCommand({
   const displayStocks = isSearchMode ? stocks : stocks?.slice(0, 10);
 
   useEffect(() => {
+    const refreshStocks = async () => {
+      if (open && !searchTerm) {
+        setLoading(true);
+        try {
+          const refreshed = await searchStocksForClient("");
+          setStocks(refreshed);
+        } catch {
+          setStocks(initialStocks);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    refreshStocks();
+  }, [open]);
+
+  useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLocaleLowerCase() === "k") {
         e.preventDefault();

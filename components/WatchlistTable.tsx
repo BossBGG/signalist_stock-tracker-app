@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table"; // Assuming you have shadcn table installed
 import { WATCHLIST_TABLE_HEADER } from "@/lib/constants";
-import { formatPrice, getChangeColorClass } from "@/lib/utils";
+import { formatMarketCap, formatPrice, getChangeColorClass } from "@/lib/utils";
 import WatchlistButton from "./ui/WatchlistButton";
 import { Button } from "./ui/button";
 
@@ -49,7 +49,7 @@ const WatchlistTable = ({ watchlist, onAddAlert }: WatchlistTableProps) => {
                     {stock.changePercent > 0 ? "+" : ""}
                     {stock.changePercent.toFixed(2)}%
                 </TableCell>
-                <TableCell className="table-cell">{stock.marketCap}</TableCell>
+                <TableCell className="table-cell">{formatMarketCap(stock.marketCap)}</TableCell>
                 <TableCell className="table-cell">{stock.peRatio || 'N/A'}</TableCell>
                 <TableCell className="table-cell">
                     <Button 

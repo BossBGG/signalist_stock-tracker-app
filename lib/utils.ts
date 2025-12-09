@@ -142,3 +142,17 @@ export const calculateProximity = (currentValue: number, targetValue: number) =>
   if(!currentValue || !targetValue) return 0;
   return ((currentValue - targetValue) / targetValue) * 100;
 }
+
+export const formatMarketCap = (marketCapInMillions: number) => {
+  if(!marketCapInMillions) return "N/A";
+
+  if(marketCapInMillions >= 1_000_000){
+    return (marketCapInMillions / 1_000_000).toFixed(2) + "T";
+  }
+  else if(marketCapInMillions >= 1_000) {
+    return (marketCapInMillions / 1_000).toFixed(2) + "B";
+  }
+  else {
+    return marketCapInMillions.toFixed(2) + "M";
+  }
+}

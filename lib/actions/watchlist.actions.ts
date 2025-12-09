@@ -109,9 +109,12 @@ export async function getWatchlist() {
             currentPrice: quote.c || 0,
             changePercent: quote.dp || 0,
             logo: profile.logo || "",
-            marketCap: profile.marketCapitalization
+            marketCap: profile.marketCapitalization || 0, 
+            /*
+              marketCap: profile.marketCapitalization
               ? `${profile.marketCapitalization.toFixed(2)}M`
-              : "N/A",
+              : "N/A", 
+            */
             peRatio: profile.name ? "N/A" : "N/A",
           };
         } catch (e) {
@@ -129,5 +132,24 @@ export async function getWatchlist() {
   } catch (error) {
     console.error("Get Watchlist Error:", error);
     return [];
+  }
+}
+
+export async function checkIsStockInWatchlist(symbol: string) {
+  try {
+    const session = await auth.api.getSession({headers: await headers() });
+    if(!session?.user) return false;
+
+    await connectToDatabase();
+
+    const exists = await Watchlist.findOne({
+      userId: session.user.id,
+      symbol: symbol.toUpperCase(),
+    });
+
+    return !!exists;
+  } catch (error){
+    console.error("Error checking watchlist:", error);
+    return false;
   }
 }

@@ -1,5 +1,6 @@
 import TradingViewWidget from "@/components/TradingViewWidget";
 import WatchlistButton from "@/components/ui/WatchlistButton";
+import { checkIsStockInWatchlist } from "@/lib/actions/watchlist.actions";
 import {
   SYMBOL_INFO_WIDGET_CONFIG,
   CANDLE_CHART_WIDGET_CONFIG,
@@ -12,6 +13,7 @@ import {
 export default async function StockDetails({ params }: StockDetailsPageProps) {
   const { symbol } = await params;
   const scriptUrl = `https://s3.tradingview.com/external-embedding/embed-widget-`;
+  const isSaved = await checkIsStockInWatchlist(symbol);
 
   return (
     <div className="flex min-h-screen p-4 md:p-6 lg:p-8">
@@ -44,6 +46,7 @@ export default async function StockDetails({ params }: StockDetailsPageProps) {
               symbol={symbol.toLowerCase()}
               company={symbol.toUpperCase()}
               isInWatchlist={false}
+              initialIsSaved={isSaved}
             />
           </div>
           <TradingViewWidget
