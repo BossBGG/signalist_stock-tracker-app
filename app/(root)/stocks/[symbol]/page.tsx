@@ -1,5 +1,10 @@
+import CompanyInfo from "@/components/stock-details/CompanyInfo";
+import LatestNews from "@/components/stock-details/LatestNews";
+import RelatedStocks from "@/components/stock-details/RelatedStocks";
+import TodaysRange from "@/components/stock-details/TodaysRange";
 import TradingViewWidget from "@/components/TradingViewWidget";
 import WatchlistButton from "@/components/ui/WatchlistButton";
+import { getCompanyNews, getCompanyPeers, getCompanyProfile, getQuote } from "@/lib/actions/finnhub.actions";
 import { checkIsStockInWatchlist } from "@/lib/actions/watchlist.actions";
 import {
   SYMBOL_INFO_WIDGET_CONFIG,
@@ -9,11 +14,29 @@ import {
   COMPANY_PROFILE_WIDGET_CONFIG,
   COMPANY_FINANCIALS_WIDGET_CONFIG,
 } from "@/lib/constants";
+import { notFound } from "next/navigation";
 
 export default async function StockDetails({ params }: StockDetailsPageProps) {
   const { symbol } = await params;
   const scriptUrl = `https://s3.tradingview.com/external-embedding/embed-widget-`;
   const isSaved = await checkIsStockInWatchlist(symbol);
+
+  const uppercaseSymbol = symbol.toUpperCase();
+
+  //Parallel Data Fetching
+  const stockDataPromise = getQuote(uppercaseSymbol);
+  const profilePromise = getCompanyProfile(uppercaseSymbol);
+  const newsPromise = getCompanyNews(uppercaseSymbol);
+  const peersPromise = getCompanyPeers(uppercaseSymbol);
+
+  const [quote, profile, news , peers]= await Promise.all([
+    stockDataPromise,
+    profilePromise,
+    newsPromise,
+    peersPromise,
+  ])
+
+  if(!quote) return notFound();
 
   return (
     <div className="flex min-h-screen p-4 md:p-6 lg:p-8">
@@ -37,6 +60,7 @@ export default async function StockDetails({ params }: StockDetailsPageProps) {
             className="custom-chart"
             height={600}
           />
+          <LatestNews news={news} />
         </div>
 
         {/* Right column */}
@@ -54,6 +78,14 @@ export default async function StockDetails({ params }: StockDetailsPageProps) {
             config={TECHNICAL_ANALYSIS_WIDGET_CONFIG(symbol)}
             height={400}
           />
+          <TodaysRange 
+              low={quote.l} 
+              high={quote.h} 
+              current={quote.c} 
+              open={quote.o} 
+              prevClose={quote.pc} 
+           />
+          <CompanyInfo profile={profile} />
           <TradingViewWidget
             scriptUrl={`${scriptUrl}company-profile.js`}
             config={COMPANY_PROFILE_WIDGET_CONFIG(symbol)}
@@ -64,6 +96,8 @@ export default async function StockDetails({ params }: StockDetailsPageProps) {
             config={COMPANY_FINANCIALS_WIDGET_CONFIG(symbol)}
             height={464}
           />
+          
+          <RelatedStocks peers={peers} />
         </div>
       </section>
     </div>
