@@ -4,15 +4,9 @@ import Image from 'next/image';
 import { getMarketNews } from '@/lib/actions/finnhub.actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getTodayFinancialNewsTimeAgo } from '@/lib/utils';
 
-const getTimeAgo = (timestamp: number) => {
-  const seconds = Math.floor((new Date().getTime() - timestamp * 1000) / 1000);
-  let interval = seconds / 3600;
-  if (interval > 1) return Math.floor(interval) + " hours ago";
-  interval = seconds / 60;
-  if (interval > 1) return Math.floor(interval) + " minutes ago";
-  return "Just now";
-};
+
 
 const NewsItem = ({ news }: { news: any }) => (
   <a 
@@ -28,7 +22,7 @@ const NewsItem = ({ news }: { news: any }) => (
         <div className="flex items-center gap-2 mb-2 text-xs text-gray-400 font-medium">
             <span>{news.source}</span>
             <span className="text-gray-600">•</span>
-            <span>{getTimeAgo(news.datetime)}</span>
+            <span>{getTodayFinancialNewsTimeAgo(news.datetime)}</span>
         </div>
 
         {/* Headline */}
