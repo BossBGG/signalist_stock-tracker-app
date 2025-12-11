@@ -1,5 +1,3 @@
-import allStocksData from './data/stocks.json';
-
 export const NAV_ITEMS = [
     { href: '/', label: 'Dashboard' },
     { href: '/search', label: 'Search' },
@@ -418,4 +416,3 @@ export const WATCHLIST_TABLE_HEADER = [
     'Alert',
     'Action',
 ];
-

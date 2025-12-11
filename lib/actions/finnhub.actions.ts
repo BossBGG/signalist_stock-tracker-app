@@ -283,6 +283,7 @@ export const getCompanyNews = async (symbol: string) => {
 };
 
 export const getCompanyPeers = async (symbol: string) => {
+  
   try {
     const peerRes = await fetch(
       `https://finnhub.io/api/v1/stock/peers?symbol=${symbol}&token=${NEXT_PUBLIC_FINNHUB_API_KEY}`,
@@ -316,3 +317,20 @@ export const getCompanyPeers = async (symbol: string) => {
     return [];
   }
 };
+
+export const getMarketNews = async (category: string = "general") => {
+  try {
+    const res = await fetch(
+      `https://finnhub.io/api/v1/news?category=${category}&token=${NEXT_PUBLIC_FINNHUB_API_KEY}`,
+      { next: {revalidate: 1800}}
+    );
+
+    if(!res.ok) throw new Error("Failed to fetch news");
+
+    const data = await res.json();
+    return data.slice(0, 10);
+  } catch (error) {
+    console.error(`Error fetching ${category} news:`, error);
+    return [];
+  }
+}

@@ -10,7 +10,7 @@ import {
 import { Button } from "./ui/button";
 import { Loader2, Star, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { searchStocksForClient } from "@/lib/actions/finnhub.actions";
+import { searchStocks, searchStocksForClient } from "@/lib/actions/finnhub.actions";
 import { useDebounce } from "@/hook/useDebounce";
 import WatchlistButton from "./ui/WatchlistButton";
 import { symbol } from "zod";
@@ -34,10 +34,12 @@ export default function SearchCommand({
       if (open && !searchTerm) {
         setLoading(true);
         try {
-          const refreshed = await searchStocksForClient("");
+          const refreshed = await searchStocks("");
+          // const refreshed = await searchStocksForClient("");
           setStocks(refreshed);
-        } catch {
-          setStocks(initialStocks);
+        } catch (error) {
+          console.error("Failed to load stocks:", error);
+          setStocks(initialStocks || []);
         } finally {
           setLoading(false);
         }
@@ -62,9 +64,11 @@ export default function SearchCommand({
 
     setLoading(true);
     try {
-      const results = await searchStocksForClient(searchTerm.trim());
+      const results = await searchStocks(searchTerm.trim());
+      // const results = await searchStocksForClient(searchTerm.trim());
       setStocks(results);
-    } catch {
+    } catch (error) {
+      console.error("Search failed:", error);
       setStocks([]);
     } finally {
       setLoading(false);

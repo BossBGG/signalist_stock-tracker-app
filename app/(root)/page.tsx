@@ -1,3 +1,5 @@
+import DashboardWatchlist from "@/components/DashboardWatchlist";
+import TodayFinancialNews from "@/components/TodayFinancialNews";
 import TradingViewWidget from "@/components/TradingViewWidget";
 import {
   HEATMAP_WIDGET_CONFIG,
@@ -11,6 +13,16 @@ const Home = () => {
 
   return (
     <div className="flex min-h-screen home-wrapper">
+
+      <section className="grid w-full gap-8 home-section">
+        <div className="md:col-span-1 xl:col-span-2">
+          <DashboardWatchlist/>
+        </div>
+        <div className="h-full md:col-span-1 xl:col-span-1">
+          <TodayFinancialNews/>
+        </div>
+      </section>
+
       <section className="grid w-full gap-8 home-section">
         <div className="md:col-span-1 xl:col-span-1">
           <TradingViewWidget
@@ -47,7 +59,12 @@ const Home = () => {
             height={600}
           />
         </div>
+        
       </section>
+
+      
+
+      
     </div>
   );
 };
