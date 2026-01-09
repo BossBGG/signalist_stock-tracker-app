@@ -10,6 +10,7 @@ import { fetchJSON, getNews } from "../actions/finnhub.actions";
 import { getFormattedTodayDate } from "../utils";
 import { connectToDatabase } from "@/database/mongoose";
 import { AlertModel } from "@/database/models/alert.model";
+import { tr } from "zod/v4/locales";
 
 
 export const sendSignUpEmail = inngest.createFunction(
@@ -182,7 +183,7 @@ export const checkAndTriggerAlerts = inngest.createFunction(
     });
 
     if(!alertsToCheck.length) return {message: "No alerts due for checking"};
-    //Batching
+    //Fetch Market Data (Optimized Batching)
     const uniqueSymbols = [...new Set(alertsToCheck.map((a: any) => a.symbol))];
     const token = process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
     // get market data
@@ -202,68 +203,74 @@ export const checkAndTriggerAlerts = inngest.createFunction(
       return data;
     });
 
-    //Process Alerts
-    const triggeredAlerts = await step.run("process-alerts", async () => {
-      const triggered: any[] = [];
-      const db = (await connectToDatabase()).connection.db;
-      if(!db) return [];
+    //Process Logic & Prepare Actions
+    const actionsToTake = alertsToCheck.map((alert: any) => {
+      const quote = marketData[alert.symbol];
+      if(!quote) return null;
 
-      for (const alert of alertsToCheck as any[]){
-        const quote = marketData[alert.symbol];
-        if(!quote) continue;
+      const currentPrice = quote.c;
+      const currentVolume = quote.v;
+      const threshold = alert.threshold;
+      let isTriggered = false;
+      let emailType: 'upper' | 'lower' | 'volume' = 'upper';
 
-        const currentPrice = quote.c;
-        const currentVolume = quote.v;
-
-        const threshold = alert.threshold;
-        let isTriggered = false;
-        let emailType: 'upper' | 'lower' | 'volume' = 'upper';
-        let changePercent = quote.dp;
-
-        // check if price condition is met
-        if (alert.alertType === 'price') {
-          if(alert.condition === "greater" && currentPrice >= threshold) {
-            isTriggered = true;
-            emailType = 'upper';
-          } else if (alert.condition === 'less' && currentPrice <= threshold) {
-            isTriggered = true;
-            emailType = 'lower';
-          }
-          // เพิ่ม Logic Moves Up/Down By (Optional ถ้าต้องการ)
+      if(alert.alertType === 'price') {
+        if(alert.condition === 'greater' && currentPrice >= threshold) {
+          isTriggered = true; emailType = 'upper';
+        } else if (alert.condition === 'less' && currentPrice <= threshold) {
+          isTriggered = true; emailType = 'lower';
         }
-        else if (alert.alertType === 'volume') {
-          if(alert.condition === "greater" && currentVolume >= threshold) {
-            isTriggered = true;
-            emailType = 'volume';
-          }
-          // Volume ปกติจะไม่ใช้ 'less' เพราะเริ่มต้นวันมันเป็น 0 เสมอ
-        }
-
-        if(isTriggered) {
-          const user = await db.collection("user").findOne({ id: alert.userId });
-
-          if(user?.email) {
-            await sendStockAlertEmail({
-              email: user.email,
-              type: emailType,
-              alertData: {
-                symbol: alert.symbol,
-                company: alert.company,
-                currentPrice: currentPrice,
-                threshold: threshold,
-                currentVolume: (quote.v / 1000000).toFixed(2) + 'M',
-                changePercent: quote.dp
-              }
-            });
-
-            triggered.push(alert._id);
-            await AlertModel.findByIdAndUpdate(alert._id, { lastTriggeredAt: now });
-          }
+      } else if (alert.alertType === 'volume') {
+        if(alert.condition === 'greater' && currentVolume >= threshold) {
+          isTriggered = true
         }
       }
-      return triggered;
+
+      if (isTriggered) {
+        return {
+          alert,
+          emailType,
+          quote
+        };
+      }
+      return null;
+    }).filter(item => item !== null);
+
+    if (actionsToTake.length === 0) return { success: true, triggeredCount: 0};
+
+    const results = await step.run("execute-actions", async () => {
+        const db = (await connectToDatabase()).connection.db;
+
+        const emailPromises = actionsToTake.map(async (action: any) => {
+          const user = await db?.collection("user").findOne({ id: action.alert.userId });
+          if (user?.email) {
+            return sendStockAlertEmail({
+              email: user.email,
+              type: action.emailType,
+              alertData: {
+                symbol: action.alert.symbol,
+                company: action.alert.company,
+                currentPrice: action.quote.c,
+                threshold: action.alert.threshold, 
+                currentVolume: (action.quote.v / 1000000).toFixed(2) + 'M',
+                changePercent: action.quote.dp
+              }
+            })
+          }
+        });
+
+        const dbPromises = actionsToTake.map((action: any) => 
+          AlertModel.findByIdAndUpdate(action.alert._id, { lastTriggeredAt1: now })
+        );
+
+        await Promise.all([
+          ...emailPromises,
+          ...dbPromises
+        ]);
+
+        return actionsToTake.length;
     });
 
-    return { success: true, checkedCount: alertsToCheck.length , triggeredCount: triggeredAlerts.length };
+    return { success: true, triggeredCount: results };
   }
 );

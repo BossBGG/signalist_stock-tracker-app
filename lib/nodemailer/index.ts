@@ -64,14 +64,16 @@ export const sendStockAlertEmail = async ({
     let htmlTemplate = '';
     let subject = '';
 
-    const timestamp = new Date().toLocaleString('en_US', {timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short'});
+    const timestamp = new Date().toLocaleString('en-US', {timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short'});
+    const targetPriceFormatted = formatPrice(alertData.threshold); 
+    const currentPriceFormatted = formatPrice(alertData.currentPrice);
 
     if(type === "upper"){
         htmlTemplate = STOCK_ALERT_UPPER_EMAIL_TEMPLATE
         .replace(/{{symbol}}/g , alertData.symbol)
         .replace(/{{company}}/g , alertData.company)
-        .replace(/{{currentPrice}}/g , formatPrice(alertData.currentPrice))
-        .replace(/{{targetPrice}}/g , formatPrice(alertData.targetPrice))
+        .replace(/{{currentPrice}}/g , currentPriceFormatted)
+        .replace(/{{targetPrice}}/g , targetPriceFormatted)
         .replace(/{{timestamp}}/g , timestamp)
 
         subject = `📈 Alert: ${alertData.symbol} reached upper target ${formatPrice(alertData.threshold)}`
@@ -80,8 +82,8 @@ export const sendStockAlertEmail = async ({
         htmlTemplate = STOCK_ALERT_LOWER_EMAIL_TEMPLATE
         .replace(/{{symbol}}/g , alertData.symbol)
         .replace(/{{company}}/g , alertData.company)
-        .replace(/{{currentPrice}}/g , formatPrice(alertData.currentPrice))
-        .replace(/{{targetPrice}}/g , formatPrice(alertData.targetPrice))
+        .replace(/{{currentPrice}}/g , currentPriceFormatted)
+        .replace(/{{targetPrice}}/g , targetPriceFormatted)
         .replace(/{{timestamp}}/g , timestamp)
 
         subject = `📉 Alert: ${alertData.symbol} dropped below ${formatPrice(alertData.threshold)}`;
