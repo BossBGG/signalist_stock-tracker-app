@@ -24,7 +24,7 @@ const AlertsList = ({ alertData, watchlist, onEditAlert, onDeleteAlert }: Alerts
   };
 
   return (
-    <div className="alert-list scrollbar-hide-default space-y-4 p-1">
+    <div className="alert-list space-y-4 p-1 max-h-[450px] overflow-y-auto scrollbar-hide-default">
       {alertData.length === 0 ? (
         <div className="alert-empty flex flex-col items-center justify-center h-40 text-gray-500">
           <BellRing className="w-10 h-10 mb-3 opacity-20" />

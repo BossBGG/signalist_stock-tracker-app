@@ -21,60 +21,62 @@ interface WatchlistTableProps {
 
 const WatchlistTable = ({ watchlist, onAddAlert }: WatchlistTableProps) => {
   return (
-    <div className="watchlist-table">
-      <Table>
-        <TableHeader>
-          <TableRow className="table-header-row hover:bg-gray-700 border-gray-600">
-            {WATCHLIST_TABLE_HEADER.map((head) => (
-              <TableHead key={head} className="table-header text-gray-400">
-                {head}
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {watchlist.length === 0 ? (
-             <TableRow>
+    <div className="watchlist-table h-full overflow-auto">
+      <div className="min-w-full">
+        <Table>
+          <TableHeader>
+            <TableRow className="table-header-row hover:bg-gray-700 border-gray-600 sticky top-0 bg-gray-800 z-10">
+              {WATCHLIST_TABLE_HEADER.map((head) => (
+                <TableHead key={head} className="table-header text-gray-400">
+                  {head}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {watchlist.length === 0 ? (
+              <TableRow>
                 <TableCell colSpan={8} className="text-center  text-gray-500  py-10 items-center justify-center">
-                    Your watchlist is empty. Add stocks to track them.
+                  Your watchlist is empty. Add stocks to track them.
                 </TableCell>
-             </TableRow>
-          ) : (
-            watchlist.map((stock) => (
+              </TableRow>
+            ) : (
+              watchlist.map((stock) => (
                 <TableRow key={stock.symbol} className="table-row">
-                <TableCell className="table-cell font-bold text-white">{stock.company}</TableCell>
-                <TableCell className="table-cell">{stock.symbol}</TableCell>
-                <TableCell className="table-cell">{formatPrice(stock.currentPrice)}</TableCell>
-                <TableCell className={`table-cell ${getChangeColorClass(stock.changePercent)}`}>
+                  <TableCell className="table-cell font-bold text-white">{stock.company}</TableCell>
+                  <TableCell className="table-cell">{stock.symbol}</TableCell>
+                  <TableCell className="table-cell">{formatPrice(stock.currentPrice)}</TableCell>
+                  <TableCell className={`table-cell ${getChangeColorClass(stock.changePercent)}`}>
                     {stock.changePercent > 0 ? "+" : ""}
                     {stock.changePercent.toFixed(2)}%
-                </TableCell>
-                <TableCell className="table-cell">{formatMarketCap(stock.marketCap)}</TableCell>
-                <TableCell className="table-cell">{stock.peRatio || 'N/A'}</TableCell>
-                <TableCell className="table-cell">
+                  </TableCell>
+                  <TableCell className="table-cell">{formatMarketCap(stock.marketCap)}</TableCell>
+                  <TableCell className="table-cell">{stock.peRatio || 'N/A'}</TableCell>
+                  <TableCell className="table-cell">
                     <Button 
-                        onClick={() => onAddAlert(stock.symbol, stock.company)}
-                        className="add-alert"
+                      onClick={() => onAddAlert(stock.symbol, stock.company)}
+                      className="add-alert"
                     >
-                        Add Alert
+                      Add Alert
                     </Button>
-                </TableCell>
-                <TableCell className="table-cell">
+                  </TableCell>
+                  <TableCell className="table-cell">
                     <div className="flex items-center">
-                        <WatchlistButton 
-                            symbol={stock.symbol} 
-                            company={stock.company} 
-                            isInWatchlist={true} 
-                            type="icon"
-                            showTrashIcon={true}
-                        />
+                      <WatchlistButton 
+                        symbol={stock.symbol} 
+                        company={stock.company} 
+                        isInWatchlist={true} 
+                        type="icon"
+                        showTrashIcon={true}
+                      />
                     </div>
-                </TableCell>
+                  </TableCell>
                 </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };

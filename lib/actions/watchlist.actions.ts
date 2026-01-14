@@ -92,47 +92,91 @@ export async function getWatchlist() {
     }).lean();
     if (!watchlisItems.length) return [];
 
-    const watchlistWithData = await Promise.all(
-      watchlisItems.map(async (item: any) => {
-        try {
-          const quoteUrl = `${FINNHUB_BASE_URL}/quote?symbol=${item.symbol}&token=${FINNHUB_API_KEY}`;
-          const profileUrl = `${FINNHUB_BASE_URL}/stock/profile2?symbol=${item.symbol}&token=${FINNHUB_API_KEY}`;
+    // Batch API calls to reduce token usage
+    const symbols = watchlisItems.map(item => item.symbol);
+    const quotes = await batchFetchQuotes(symbols);
+    const profiles = await batchFetchProfiles(symbols);
 
-          const [quote, profile] = await Promise.all([
-            fetchJSON<QuoteData>(quoteUrl),
-            fetchJSON<ProfileData>(profileUrl),
-          ]);
+    const watchlistWithData = watchlisItems.map((item: any) => {
+      const quote = quotes[item.symbol];
+      const profile = profiles[item.symbol];
+      
+      return {
+        ...item,
+        _id: item._id.toString(),
+        currentPrice: quote?.c || 0,
+        changePercent: quote?.dp || 0,
+        logo: profile?.logo || "",
+        marketCap: profile?.marketCapitalization || 0,
+        peRatio: profile?.name ? "N/A" : "N/A",
+      };
+    });
 
-          return {
-            ...item,
-            _id: item._id.toString(),
-            currentPrice: quote.c || 0,
-            changePercent: quote.dp || 0,
-            logo: profile.logo || "",
-            marketCap: profile.marketCapitalization || 0, 
-            /*
-              marketCap: profile.marketCapitalization
-              ? `${profile.marketCapitalization.toFixed(2)}M`
-              : "N/A", 
-            */
-            peRatio: profile.name ? "N/A" : "N/A",
-          };
-        } catch (e) {
-          console.error(`Failed to fetch data for ${item.symbol}`, e);
-          return {
-            ...item,
-            _id: item._id.toString(),
-            currentPrice: 0,
-            changePercent: 0,
-          };
-        }
-      })
-    );
     return watchlistWithData;
   } catch (error) {
     console.error("Get Watchlist Error:", error);
     return [];
   }
+}
+
+// Batch fetch quotes to reduce API calls
+async function batchFetchQuotes(symbols: string[]) {
+  const results: Record<string, any> = {};
+  
+  // Process in batches of 10 to avoid rate limits
+  const batchSize = 10;
+  for (let i = 0; i < symbols.length; i += batchSize) {
+    const batch = symbols.slice(i, i + batchSize);
+    
+    await Promise.all(
+      batch.map(async (symbol) => {
+        try {
+          const quoteUrl = `${FINNHUB_BASE_URL}/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`;
+          results[symbol] = await fetchJSON<QuoteData>(quoteUrl);
+        } catch (e) {
+          console.error(`Failed to fetch quote for ${symbol}`, e);
+          results[symbol] = { c: 0, dp: 0 };
+        }
+      })
+    );
+    
+    // Add small delay between batches to avoid rate limiting
+    if (i + batchSize < symbols.length) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+  
+  return results;
+}
+
+// Batch fetch profiles to reduce API calls
+async function batchFetchProfiles(symbols: string[]) {
+  const results: Record<string, any> = {};
+  
+  // Process in batches of 10 to avoid rate limits
+  const batchSize = 10;
+  for (let i = 0; i < symbols.length; i += batchSize) {
+    const batch = symbols.slice(i, i + batchSize);
+    
+    await Promise.all(
+      batch.map(async (symbol) => {
+        try {
+          const profileUrl = `${FINNHUB_BASE_URL}/stock/profile2?symbol=${symbol}&token=${FINNHUB_API_KEY}`;
+          results[symbol] = await fetchJSON<ProfileData>(profileUrl);
+        } catch (e) {
+          console.error(`Failed to fetch profile for ${symbol}`, e);
+          results[symbol] = {};
+        }
+      })
+    );
+    
+    // Add small delay between batches to avoid rate limiting
+    if (i + batchSize < symbols.length) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+  
+  return results;
 }
 
 export async function checkIsStockInWatchlist(symbol: string) {
