@@ -213,7 +213,7 @@ async function searchStocksWithEmail(
   }
 }
 
-export const searchStocks = cache(searchStocksWithEmail);
+export const searchStocks = searchStocksWithEmail;
 
 export async function searchStocksForClient(
   query?: string

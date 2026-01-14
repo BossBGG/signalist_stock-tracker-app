@@ -21,7 +21,7 @@ interface WatchlistTableProps {
 
 const WatchlistTable = ({ watchlist, onAddAlert }: WatchlistTableProps) => {
   return (
-    <div className="watchlist-table h-full overflow-auto">
+    <div className="watchlist-table h-full overflow-y-auto relative scrollbar-hide-default">
       <div className="min-w-full">
         <Table>
           <TableHeader>
