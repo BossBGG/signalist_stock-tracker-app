@@ -260,7 +260,7 @@ export const checkAndTriggerAlerts = inngest.createFunction(
         });
 
         const dbPromises = actionsToTake.map((action: any) => 
-          AlertModel.findByIdAndUpdate(action.alert._id, { lastTriggeredAt1: now })
+          AlertModel.findByIdAndUpdate(action.alert._id, { lastTriggeredAt: now })
         );
 
         await Promise.all([
