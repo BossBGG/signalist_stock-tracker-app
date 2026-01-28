@@ -58,9 +58,9 @@ const WatchlistClient = ({ watchlist , alerts , news , initalStocks }: Props) =>
 
     return  (
         <>
-        <div className="watchlist-container h-[calc(100vh-140px)] min-h-[600px]">
+        <div className="flex flex-col lg:flex-row gap-8 min-h-[600px]">
             {/* Left: Watchlist Table */}
-            <div className="watchlist flex flex-col h-full flex-1">
+            <div className="watchlist flex flex-col flex-1 min-w-0">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="watchlist-title">Watchlist</h2>
                     <div className="w-fit">
@@ -72,7 +72,7 @@ const WatchlistClient = ({ watchlist , alerts , news , initalStocks }: Props) =>
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-auto bg-gray-800 rounded-lg border border-gray-600 relative">
+                <div className="flex-1 min-h-[400px] max-h-[calc(100vh-200px)] overflow-auto bg-gray-800 rounded-lg border border-gray-600 relative">
                     <WatchlistTable
                         watchlist={watchlist}
                         onAddAlert={handleOpenAlertModal}
@@ -81,7 +81,7 @@ const WatchlistClient = ({ watchlist , alerts , news , initalStocks }: Props) =>
             </div>
 
             {/* Right: Alerts List */}
-            <div className=" flex flex-col h-full w-full lg:w-[350px] xl:w-[400px]">
+            <div className="flex flex-col w-full lg:w-[350px] xl:w-[400px] lg:flex-shrink-0">
                 <div className="flex justify-between items-center  mb-6">
                     <h2 className="watchlist-title">Alerts</h2>
                     <div className="w-fit">
@@ -94,7 +94,7 @@ const WatchlistClient = ({ watchlist , alerts , news , initalStocks }: Props) =>
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-auto bg-gray-800 rounded-lg border border-gray-600 relative">
+                <div className="flex-1 min-h-[400px] max-h-[calc(100vh-200px)] overflow-hidden bg-gray-800 rounded-lg border border-gray-600 relative">
                     <AlertsList 
                     alertData={alerts}
                     watchlist={watchlist}
