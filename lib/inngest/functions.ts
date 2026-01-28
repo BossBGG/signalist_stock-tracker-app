@@ -242,7 +242,12 @@ export const checkAndTriggerAlerts = inngest.createFunction(
         const db = (await connectToDatabase()).connection.db;
 
         const emailPromises = actionsToTake.map(async (action: any) => {
-          const user = await db?.collection("user").findOne({ id: action.alert.userId });
+          const user = await db?.collection("users").findOne({ 
+            $or: [
+              { id: action.alert.userId },
+              { _id: action.alert.userId }
+            ]
+          });
           if (user?.email) {
             return sendStockAlertEmail({
               email: user.email,

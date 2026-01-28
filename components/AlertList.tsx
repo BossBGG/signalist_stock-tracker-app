@@ -4,6 +4,15 @@ import { calculateProximity, formatPrice, getAlertText } from "@/lib/utils";
 import { Pencil, Trash2, BellRing } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+const FREQUENCY_LABELS: Record<string, string> = {
+  once_per_minute: 'Once per minute',
+  once_per_5_minute: 'Once per 5 minutes',
+  once_per_15_minute: 'Once per 15 minutes',
+  once_per_hour: 'Once per hour',
+  once_per_day: 'Once per day',
+  once: 'Once',
+};
+
 interface AlertsListProps {
   alertData: Alert[];
   watchlist: StockWithData[];
@@ -108,9 +117,7 @@ const AlertsList = ({ alertData, watchlist, onEditAlert, onDeleteAlert }: Alerts
 
                 <div className="flex-shrink-0">
                   <span className="text-[10px] font-medium px-2 py-1 bg-[#2A2A2A] text-yellow-500 rounded border border-yellow-500/20">
-                    {alert.frequency === 'once_per_minute' ? 'Once per minute' : 
-                     alert.frequency === 'once_per_hour' ? 'Once per hour' : 
-                     alert.frequency === 'once_per_day' ? 'Once per day' : 'Once'}
+                    {FREQUENCY_LABELS[alert.frequency ?? 'once'] || 'Once'}
                   </span>
                 </div>
               </div>
